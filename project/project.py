@@ -41,4 +41,52 @@ for i, line in enumerate(fileinput.input()):
 
 print states
 
+new_states = {}
 
+def return_valid_states(state, char):
+    answer = []
+    for i in states[state][char]:
+        answer.append(i)
+        for j in return_epsilon_moves(i):
+            answer.append(j)
+    for i in return_epsilon_moves(state):
+        for j in return_valid_states(i, char):
+            answer.append(j)
+    return answer
+
+def return_epsilon_moves(state):
+    answer = []
+    for i in states[state]['E']:
+        answer.append(i)
+        for j in return_epsilon_moves(i):
+            answer.append(j)
+    return answer
+
+state_lookup = {}
+
+state_lookup[frozenset([first_state] + return_epsilon_moves(first_state))] = 1
+print state_lookup
+new_states = {1: {i:'' for i in state_changes}}
+counter = 1
+
+Dstates = {1: False}
+while(not all(Dstates.values()):
+    unmarked = next(i for i, v in enumerate(Dstates.values()) if v == False)
+    for i in state_changes:
+        if i != 'E':
+            print "char: ", i
+            print "new_states:", new_states[counter]
+            valid_states = frozenset(sum(map(lambda x: return_valid_states(x, i), state_lookup.keys()[counter]), []))
+            if valid_states not in state_lookup:
+                print "valid states:", i, "," , valid_states
+                state_lookup[valid_states] = len(new_states)
+            else:
+                new_states
+    counter += 1
+    if counter > len(new_states):
+        break
+
+
+print return_epsilon_moves(7)
+print return_valid_states(3, 'b')
+print sorted(list(set(sum(map(lambda x: return_valid_states(x, 'b'), [3]), []))))
