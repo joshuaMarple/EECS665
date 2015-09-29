@@ -1,32 +1,25 @@
 import fileinput
 import string
 import re
-
+from collections import OrderedDict
 
 # parser
 
 states = {}
 
 for i, line in enumerate(fileinput.input()):
-    print i, line
     if i == 0:
         first_state = int(re.split("[{}]", line)[1])
-        print first_state
     elif i == 1:
-        print re.split("[{}]", line)
         final_states = [int(x) for x in re.split("[{}]", line)[1].split(",")]
-        print final_states
     elif i == 2:
         total_states = int(re.split(":", line)[1])
-        print total_states
     elif i == 3:
         state_changes = re.split("\s+", line)
         for j in state_changes:
             if j in ['', 'State']:
                 state_changes.remove(j)
-        print state_changes
         states = {k : {j : [] for j in state_changes} for k in range(1, total_states + 1)}
-        print states
 
     else:
         line = re.split("\s+", line)
@@ -37,11 +30,6 @@ for i, line in enumerate(fileinput.input()):
             moves = moves.strip('{}')
             if moves != '':
                 states[cur_num][char] = eval('[' + moves + ']')
-        print line
-
-print states
-
-new_states = {}
 
 def return_valid_states(state, char):
     answer = []
@@ -62,31 +50,23 @@ def return_epsilon_moves(state):
             answer.append(j)
     return answer
 
-state_lookup = {}
 
-state_lookup[frozenset([first_state] + return_epsilon_moves(first_state))] = 1
-print state_lookup
-new_states = {1: {i:'' for i in state_changes}}
-counter = 1
+Dtran = {1: {i:'' for i in state_changes}}
+Dstates = OrderedDict()
+Dstates[frozenset([first_state] + return_epsilon_moves(first_state))] = False
 
-Dstates = {1: False}
-while(not all(Dstates.values()):
+while(not all(Dstates.values())):
     unmarked = next(i for i, v in enumerate(Dstates.values()) if v == False)
+    cur_state = Dstates.keys()[unmarked]
+    Dstates[cur_state] = True
     for i in state_changes:
         if i != 'E':
-            print "char: ", i
-            print "new_states:", new_states[counter]
-            valid_states = frozenset(sum(map(lambda x: return_valid_states(x, i), state_lookup.keys()[counter]), []))
-            if valid_states not in state_lookup:
-                print "valid states:", i, "," , valid_states
-                state_lookup[valid_states] = len(new_states)
-            else:
-                new_states
-    counter += 1
-    if counter > len(new_states):
-        break
+            moves = frozenset(sum(map(lambda x: return_valid_states(x, i), cur_state), []))
+            if moves != frozenset([]):
+                if moves not in Dstates.keys():
+                    Dstates[moves] = False
+                    Dtran[len(Dtran) + 1] = {j : '' for j in state_changes}
+                Dtran[unmarked + 1][i] = Dstates.keys().index(moves) + 1
 
-
-print return_epsilon_moves(7)
-print return_valid_states(3, 'b')
-print sorted(list(set(sum(map(lambda x: return_valid_states(x, 'b'), [3]), []))))
+print Dstates
+print Dtran
