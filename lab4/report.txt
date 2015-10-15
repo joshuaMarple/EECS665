@@ -1,0 +1,5 @@
+Similar to the first lex lab, we would need to define states in order to model the indentation level. 
+So while some statements are allowed only at the bottom level, others may not be accepted by the grammar unless they are at a certain indentation. 
+A good example is the hint provided, the makefile. In the makefile, we can (at the bottom level of indentation) create labels that the subsequent indented lines are applied to. A different grammar is needed for the bottom level of indentation than is needed for the higher levels. 
+
+In the case of a makefile, the parser is actually easier for us (than if we had to identify spaces). Instead of needing to identify groups of spaces to find the indentation level, we can simply match all tabs at the beginning of a line. This allows us to very quickly and simply identify where the indentation level lies.
