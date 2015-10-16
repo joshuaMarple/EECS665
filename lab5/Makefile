@@ -8,7 +8,7 @@ CFLAGS=-Wall -Wno-unused-label -Wno-unused -I. -DNDEBUG
 
 all: parser
 
-parser: parser.yacc.o Scanner.lex.o
+parser: parser.yacc.o scanner.lex.o
 	$(CC) -o $@ $+
 
 %.o: %.c

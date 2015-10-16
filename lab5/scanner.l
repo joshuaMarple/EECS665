@@ -12,130 +12,28 @@
 %}
 
 %option noyywrap nounput yylineno
-ID [a-zA-Z][a-zA-Z0-9_]*
-%x SCOMMENT MCOMMENT
+%x COMMENT
 WHITESPACE [ \t\n\r]
+ident [a-zA-Z][a-zA-Z0-9_]*
+digit         [0-9]
+hexdigit      [0-9a-fA-F]
+octdigit      [0-7]
 
 %%
-"//" {
-/****************************************
-* Matching with Single line comments in our
-* C code
-******************************************/
-BEGIN SCOMMENT;
-}
 
-"/\*" {
-/****************************************
-* Matching with multi line comments in our
-* C code
-******************************************/
-BEGIN MCOMMENT;
-}
 
-<SCOMMENT>[\n](\r)? {
-/****************************************
-* A new line indicates end of a single
-* line comment in C
-****************************************/
-
-BEGIN 0;
-}
-
-<MCOMMENT>"\*/" {
-
-BEGIN 0;
-}
-
-<SCOMMENT,MCOMMENT>[ \t] {
-/****************************************
-* Lexer ignores the comments section
-* by Ignoring anything inside a comment
-****************************************/
-}
-
-<SCOMMENT,MCOMMENT>. {
-}
-
-"#"[^\n]*"\n" {
-
-    if (pre_proc == 0) {
-        pre_proc = 1;
-        printf("PREPROC"); 
-        return PREPROC; 
-    }
-}
-
-[ \t\n\r]+ {
-}
 
 \' {
 }
 
-
-"(" {
-
-    printf("(\n");
-}
-
-")" {
-
-    printf(")\n");
-}
-
-"{" {
-
-    printf("{\n");
-}
-
-"}" {
-
-    printf("}\n");
-}
-
-"[" {
-
-    printf("[\n");
-}
-
-"]" {
-
-    printf("]\n");
-}
-
-"," {
-
-    printf(",\n");
-}
-
-";" {
-
-    printf(";\n");
-}
-
-"[A-z][A-z0-9_]*" {
-
-    printf("ID");
-    return ID;
-}
-
-"0x"[0-9A-f]+ {
-
-    printf("INTVAL");
-    return INTVAL;
-}
-
-"0"[0-7]* {
-
-    printf("INTVAL");
-    return INTVAL;
-}
-
-[1-9][0-9]* {
-
-    printf("INTVAL");
-    return INTVAL;
-}
+"("         { DEBUGF( "(\n" ); return '('; }
+")"         { DEBUGF( ")\n" ); return ')'; }
+"{"         { DEBUGF( "{\n" ); return '{'; }
+"}"         { DEBUGF( "}\n" ); return '}'; }
+"["         { DEBUGF( "[\n" ); return '['; }
+"]"         { DEBUGF( "]\n" ); return ']'; }
+","         { DEBUGF( ",\n" ); return ','; }
+";"         { DEBUGF( ";\n" ); return ';'; }
 
 [0-9]*[.][0-9]+ {
 
@@ -521,22 +419,51 @@ BEGIN 0;
     printf("SIZEOF");
     return SIZEOF;
 }
-{ID} {
-/**************************************
-* If an identifier is matched, then
-* print ID and return a token ID
-**************************************/
 
-    printf("ID");
-    return ID;
-     }
+{ident} { DEBUGF( "ID\n" ); yylval.id = strdup(yytext); return ID; }
 
-%%
-int main(int argc, const char* argv[])
-{
-  /*Make a call to yylex() recursively. Whenever yylex() is called, it scans tokens from the
-    global input file yyin (which defaults to stdin). It continues until it either reaches an
-    end-of-file (at which point it returns the value 0) or one of its actions executes a return statement.*/
-    while(yylex()) printf("\n");
-return 0;
+%{ 
+ /**************************************************************************
+  * Scan C literal values including strings, character literals, integer
+  * literals, and floating point literals.
+  *************************************************************************/
+%}
+
+"0x"{hexdigit}+ { DEBUGF( "INTVAL\n" ); return INTVAL; }
+"0"{octdigit}*  { DEBUGF( "INTVAL\n" ); return INTVAL; }
+[1-9]{digit}*   { DEBUGF( "INTVAL\n" ); return INTVAL; }
+
+%{
+ /**************************************************************************
+  * Scan a multi-line C comment using left context or a C single line
+  * comment to the end of the line.
+  *************************************************************************/
+%}
+
+"//".*                      { /* ignored */ }
+
+"/*"                        { BEGIN COMMENT; }
+<COMMENT>"*/"               { BEGIN 0; }
+<COMMENT>([\n](\r)?)|.      { /* ignored */ } 
+
+%{
+ /**************************************************************************
+  * Scan white space in-between tokens and ignore it.
+  *************************************************************************/
+%}
+
+{WHITESPACE}+ { /* ignored */  }
+
+%{
+ /**************************************************************************
+  * Anything else that matches is unexpected so print an error.
+  *************************************************************************/
+%}
+
+
+
+. {
+    fprintf( stderr, "Unexpected input at line %d: '%s'\n", yylineno, yytext );
+    exit( 1 );
 }
+%%
