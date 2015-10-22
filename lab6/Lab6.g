@@ -4,6 +4,11 @@ grammar Lab6;
 
 // Define literals, keywords or operators, here as tokens.
 tokens {
+	Add = '+';
+	Sub = '-';
+	Mul = '*'; 
+	Div = '/';
+	Exp = '^';
 }
 
 // Written in the target language. The header section can be
@@ -30,7 +35,7 @@ tokens {
 // Some example lexer fragments. These fragments don't produce any
 // tokens themselves but can be used inside of other lexer rules.
 fragment BIN: '0' .. '1';
-fragment OCT: '0' .. '7';
+/* fragment OCT: '0' .. '7'; */
 fragment DEC: '0' .. '9';
 fragment HEX: ('0' .. '9' | 'A' .. 'F' | 'a' .. 'f');
 fragment LETTER: ('a'..'z' | 'A'..'Z');
@@ -44,13 +49,33 @@ WS : (' ' | '\t' | '\r' | '\n')+ { $channel=HIDDEN; };
 DECIMAL : DEC+ ;
 HEXADECIMAL : '0' 'x' HEX+;
 BINARY : '0' 'b' BIN+;
-OCTAL : OCT+;
+/* OCTAL : OCT+; */
 
 ID : LETTER (LETTER|DIGIT)*;
 
 
 // The top rule. You should replace this with your own rule definition to
 // parse expressions according to the assignment.
-top : expr '+' expr ;
+top : expr EOF;
 
-expr: exp=term1 {System.out.println($exp.value);};
+expr: val=term1 {System.out.println($val.value);};
+
+term1 returns [float value]:
+    l = term2 { $value = $l.value; }
+    (Add r = term2 { $value += $r.value; }
+    |Sub r = term2 { $value -= $r.value; })*;
+
+term2 returns [float value]:
+    l = term3 { $value = $l.value; }
+    (Mul r = term3 { $value *= $r.value; }
+    |Div r = term3 { $value /= $r.value; })*;
+
+term3 returns [float value]:
+    l = term4 { $value = $l.value; }
+    (Exp r = term4 { $value = (float)Math.pow($l.value, $r.value); })*;
+
+term4 returns [float value]:
+    l = digit { $value = $l.value; };
+
+digit returns [float value]:
+    n = DECIMAL { $value = Float.parseFloat($n.text);};
