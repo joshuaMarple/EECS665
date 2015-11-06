@@ -76,8 +76,8 @@ void exit_block()
  */
 void enterblock()
 {
-    new_block();
     level++;
+    new_block();
 }
 
 /*
